@@ -1,0 +1,23 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+            <li><a href="{% url 'show' auction.title %}"> {{ auction }} </a></li>
+            <li>{{auction.price}}</li>
+            <li><img href="{{auction.img_url}}"></img></li>
+            <li>{{auction.category}}</li>
+            <li>{{auction.description}}</li>
+            
+            <!-- listing open -->
+            <!-- if signed in  -->
+                <!-- add to/remove from watchlist,-->
+                <!-- bid on item form -->
+                    <!-- for MODEL form verify larger than other bids with auction id matching request auction id-->
+                <!-- comment form -->
+                <!-- if signed in and auction.user_id = request.user_id -->
+                    <!-- close auction -->
+                        <!-- highest bidder = winner -->
+            <!-- listing closed -->
+                <!-- display winner or "you" -->
+                
+{% endblock %}

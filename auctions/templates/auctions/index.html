@@ -3,7 +3,7 @@
 {% block body %}
     <h2>Active Listings</h2>
 
-        {% for auction in auction %}
+        {% for auction in auctions %}
             <li><a href="{% url 'show' auction.title %}"> {{ auction }} </a></li>
         {% endfor %}
 

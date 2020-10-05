@@ -8,28 +8,46 @@ from .forms import AuctionForm
 from .models import User, Auction, Bid, Category
 
 def new(request):
-    return render(request, "auctions/new.html", {
-        "form" : AuctionForm()
-    })
+    if request.method == "GET":
+        return render(request, "auctions/new.html", {
+            "form": AuctionForm()
+        })
+    else:
+        form = AuctionForm(request.POST)
+        if form.is_valid():
+            auction = Auction(**form.cleaned_data)
+            auction.user = request.user
+            auction.save()
+            return HttpResponseRedirect(reverse('index'))
+        else:
+            return render(request, "auctions/new.html", {
+                "form": form
+            })
+        
 
 def watchlist(request):
     return render(request, "auctions/watchlist.html")
 
-def show(request):
+
+def show(request, title):
     return render(request, "auctions/show.html", {
-        "auction": Auction.objects.get(title=request.title)
+        "auction": Auction.objects.get(title=title)
     })
+
 
 def index(request):
     return render(request, "auctions/index.html", {
         "auctions": Auction.objects.all()
     })
 
+
 def category(request):
     return render(request, "category")
 
+
 def categories(request):
     return render(request, "categories")
+
 
 def login_view(request):
     if request.method == "POST":

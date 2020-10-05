@@ -6,9 +6,6 @@ from django.conf import settings
 
 class User(AbstractUser):
     pass
-    Bid = models.ForeignKey('Bid', on_delete=models.CASCADE, null=True)
-
-
 
 
 class Auction(models.Model):
@@ -17,10 +14,10 @@ class Auction(models.Model):
     img_url = models.TextField()
     price = models.IntegerField()
     created_date = models.DateTimeField(default=timezone.now)
-    User = models.ForeignKey('User', on_delete=models.PROTECT)
+    user = models.ForeignKey('User', on_delete=models.PROTECT)
     category = models.ForeignKey('Category', on_delete=models.PROTECT)
-
-
+    def __str__(self):
+        return self.title
 
 class Category(models.Model):
     name = models.CharField(max_length=200)
@@ -28,9 +25,11 @@ class Category(models.Model):
         return self.name
 
 
+
 class Bid(models.Model):
-    User = models.ForeignKey('User', on_delete=models.PROTECT)
+    user = models.ForeignKey('User', on_delete=models.PROTECT)
     auction = models.ForeignKey('Auction', on_delete=models.PROTECT)
+
 
 class Comment(models.Model):
     user = models.ForeignKey('User', on_delete=models.PROTECT)

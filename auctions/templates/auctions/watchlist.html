@@ -1,0 +1,7 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+        <!-- for each auction matching user -->
+            <li><a href="{% url 'show' auction.title %}"> {{ auction }} </a></li>
+
+{% endblock %}
