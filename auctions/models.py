@@ -24,9 +24,11 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-
-
 class Bid(models.Model):
+    user = models.ForeignKey('User', on_delete=models.PROTECT)
+    auction = models.ForeignKey('Auction', on_delete=models.PROTECT)
+
+class Wauction(models.Model):
     user = models.ForeignKey('User', on_delete=models.PROTECT)
     auction = models.ForeignKey('Auction', on_delete=models.PROTECT)
 

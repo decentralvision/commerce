@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from .forms import AuctionForm
 
-from .models import User, Auction, Bid, Category
+from .models import User, Auction, Bid, Category, Wauction
 
 def new(request):
     if request.method == "GET":
@@ -23,10 +23,16 @@ def new(request):
             return render(request, "auctions/new.html", {
                 "form": form
             })
-        
 
 def watchlist(request):
-    return render(request, "auctions/watchlist.html")
+    def get_auctions(wauction):
+        return wauction.auction
+    wauctions = Wauction.objects.get(user=request.user)
+    auctions = wauctions.map(get_auctions, wauctions)
+
+    return render(request, "auctions/watchlist.html", {
+        "auctions": auctions
+    })
 
 
 def show(request, title):

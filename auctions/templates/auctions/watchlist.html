@@ -1,7 +1,10 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-        <!-- for each auction matching user -->
+    <h2>Active Listings</h2>
+
+        {% for auction in auctions %}
             <li><a href="{% url 'show' auction.title %}"> {{ auction }} </a></li>
+        {% endfor %}
 
 {% endblock %}
