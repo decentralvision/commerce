@@ -11,6 +11,7 @@ urlpatterns = [
     path("auction/new", views.new, name="new"),
     path("category/<str:name>/", views.category, name="category"),
     path("categories", views.categories, name="category"),
+    path("bid", views.bid, name="bid"),
 
     #dynamic page
     path("", views.index, name="index"),

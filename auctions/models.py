@@ -15,9 +15,9 @@ class Auction(models.Model):
     price = models.IntegerField()
     created_date = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey('User', on_delete=models.PROTECT)
-    category = models.ForeignKey('Category', on_delete=models.PROTECT)
-    def __str__(self):
-        return self.title
+    category = models.ForeignKey('Category', on_delete=models.PROTECT, null=True)
+    active = models.BooleanField('Active', default=True)
+
 
 class Category(models.Model):
     name = models.CharField(max_length=200)
@@ -27,14 +27,16 @@ class Category(models.Model):
 class Bid(models.Model):
     user = models.ForeignKey('User', on_delete=models.PROTECT)
     auction = models.ForeignKey('Auction', on_delete=models.PROTECT)
+    amount = models.IntegerField('Amount')
 
 class Wauction(models.Model):
     user = models.ForeignKey('User', on_delete=models.PROTECT)
     auction = models.ForeignKey('Auction', on_delete=models.PROTECT)
+    active = models.BooleanField('Active', null=True)
 
 
 class Comment(models.Model):
-    user = models.ForeignKey('User', on_delete=models.PROTECT)
-    auction = models.ForeignKey('Auction', on_delete=models.PROTECT)
+    user = models.ForeignKey('User', on_delete=models.PROTECT, null=True)
+    auction = models.ForeignKey('Auction', on_delete=models.PROTECT, null=True)
     content = models.TextField()
     

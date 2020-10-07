@@ -1,11 +1,13 @@
+import pdb
+from django.db.models import Max
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse
-from .forms import AuctionForm
-
+from .forms import AuctionForm, WauctionForm, BidForm
 from .models import User, Auction, Bid, Category, Wauction
+import json
 
 def new(request):
     if request.method == "GET":
@@ -24,20 +26,78 @@ def new(request):
                 "form": form
             })
 
-def watchlist(request):
-    def get_auctions(wauction):
-        return wauction.auction
-    wauctions = Wauction.objects.get(user=request.user)
-    auctions = wauctions.map(get_auctions, wauctions)
 
-    return render(request, "auctions/watchlist.html", {
-        "auctions": auctions
-    })
+def bid(request):
+    if request.method == "POST":
+        user = request.user
+        form = BidForm(request.POST)
+        if form.is_valid():
+            # data = form.proreqcess()
+            # bid_obj = Bid(data)
+            form.cleaned_data.get()
+            import ipdb; ipdb.set_trace()
+            auction = Auction.objects.get(title=data["auction"])
+            bid_obj.save()
+            user_bids = Bid.objects.filter(auction=auction.id)
+            # auction.price < bid.amount 
+            #  create bid 
+            #  set price auction to bid amount
+            
+        # bid logic
+    # <!-- for MODEL form verify larger than other bids with auction id matching request auction id-->
+
+
+def watchlist(request):
+    #if user is logged_in
+    # display user's watchlist
+    user = request.user
+    if user.is_authenticated:
+        if request.method == "GET":
+            # check if there are any wauctions
+            if Wauction.objects.filter(user=user, active=True).exists():
+                wauctions = Wauction.objects.get(user=user, active=True)
+                if isinstance(wauctions, list):
+                    def get_auctions(wauction):
+                        return wauction.auction
+                    auctions = wauctions.map(get_auctions, wauctions)
+                else:
+                    auctions = [wauctions.auction]
+
+                return render(request, "auctions/watchlist.html", {
+                    "auctions": auctions
+                })
+            else:
+                return render(request, "auctions/watchlist.html", {
+                    "auctions": []
+                })
+        else:
+            auction_id = int(request.POST["auction"])
+            auction = Auction.objects.get(pk=auction_id)
+            wauction, created = Wauction.objects.get_or_create(user=user, auction=auction)
+            wauction.active = not bool(wauction.active)
+            wauction.save()
+            return redirect('/auction/{}'.format(auction.title))
+
+    else:
+        return redirect('index')       
 
 
 def show(request, title):
+    user = User.objects.get(username=request.user)
+    auction = Auction.objects.get(title=title)
+    # pdb.set_trace()
+    # pass wuaction status
+    if Wauction.objects.filter(user=user, auction=auction).exists():
+        wauction = Wauction.objects.get(user=user, auction=auction)
+        active = wauction.active
+    else:
+        active = False
+    # pass bid form and data
+    bid_form = BidForm({'auction': auction.id, 'user': user.id})
     return render(request, "auctions/show.html", {
-        "auction": Auction.objects.get(title=title)
+        "auction": auction,
+        "wauction_form": WauctionForm({'auction':Auction.objects.get(title=title).id, 'active':active}),
+        "bid_form": bid_form
     })
 
 

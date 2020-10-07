@@ -2,22 +2,45 @@
 
 {% block body %}
 
-            <li><a href="{% url 'show' auction.title %}"> {{ auction }} </a></li>
+            <li><a href="{% url 'show' auction.title %}"> {{ auction.title }} </a></li>
             <li>{{auction.price}}</li>
             <li><img href="{{auction.img_url}}"></img></li>
             <li>{{auction.category}}</li>
             <li>{{auction.description}}</li>
             
-            <!-- listing open -->
-            <!-- if signed in  -->
-                <!-- add to/remove from watchlist,-->
-                <!-- bid on item form -->
-                    <!-- for MODEL form verify larger than other bids with auction id matching request auction id-->
-                <!-- comment form -->
-                <!-- if signed in and auction.user_id = request.user_id -->
-                    <!-- close auction -->
-                        <!-- highest bidder = winner -->
-            <!-- listing closed -->
-                <!-- display winner or "you" -->
+        <!-- listing closed -->
+            <!-- highest bidder = winner -->
+            <!-- display winner or "you" -->   
                 
+        <!-- listing open -->
+            <!-- if signed in and auction.user_id = request.user_id -->
+                <!-- close auction -->
+
+            <!-- if signed in  -->
+            <form action="/watchlist" method="post" class="WatchlistForm">
+                {% csrf_token %}
+                {{ wauction_form.as_p }}
+                <input type="submit" style="visibility: hidden;">
+            </form>
+
+            <form action="/bid" method="post" class="bidForm">
+                {% csrf_token %}
+                {{ bid_form }}
+                <input type="submit" value="Bid" class="bid">
+            </form>
+
+            <!-- comment form -->
+
+                <script type="text/javascript">  
+                    $(function(){
+                     $(":checkbox").on('change',function(){
+                        $('.WatchlistForm').submit();
+                        });
+                    });
+                    $(function(){
+                     $(".bid").on('change',function(){
+                        $('.bidForm').submit();
+                        });
+                    });
+                </script>
 {% endblock %}

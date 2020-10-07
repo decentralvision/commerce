@@ -1,10 +1,13 @@
 {% extends "auctions/layout.html" %}
 
+
 {% block body %}
-    <h2>Active Listings</h2>
-
-        {% for auction in auctions %}
-            <li><a href="{% url 'show' auction.title %}"> {{ auction }} </a></li>
-        {% endfor %}
-
+    <h2>Watchlist</h2>
+        {% if auctions %}
+            {% for auction in auctions %}
+                <li><a href="{% url 'show' auction.title %}"> {{ auction.title }} </a></li>
+            {% endfor %}
+        {% else %}
+            <h2>Add some auctions to your watchlist to see them</h2>
+        {% endif %}
 {% endblock %}
