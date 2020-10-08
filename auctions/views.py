@@ -17,8 +17,6 @@ def new(request):
     else:
         form = AuctionForm(request.POST)
         if form.is_valid():
-            # check for duplicates
-
             auction = Auction(**form.cleaned_data)
             auction.user = request.user
             auction.save()
@@ -28,12 +26,12 @@ def new(request):
             return render(request, "auctions/new.html", {"form": form})
 
 
-def close(request, title):
-    auction = Auction.objects.get(title=title)
+def close(request, id):
+    auction = Auction.objects.get(id=id)
     auction.closed = True
     auction.winner_id = request.user.id
     auction.save()
-    return redirect("/auction/{}".format(auction.title))
+    return redirect("/auction/{}".format(id))
 
 
 def bid(request):
@@ -53,7 +51,7 @@ def bid(request):
 
         # )
 
-    return redirect("/auction/{}".format(auction.title))
+    return redirect("/auction/{}".format(auction.id))
 
     # bid logic
     # <!-- for MODEL form verify larger than other bids with auction id matching request auction id-->
@@ -88,15 +86,15 @@ def watchlist(request):
             )
             wauction.active = not bool(wauction.active)
             wauction.save()
-            return redirect("/auction/{}".format(auction.title))
+            return redirect("/auction/{}".format(auction.id))
 
     else:
         return redirect("index")
 
 
-def show(request, title):
+def show(request, id):
     user = request.user
-    auction = Auction.objects.get(title=title)
+    auction = Auction.objects.get(id=id)
     if user.is_authenticated:
         user = User.objects.get(username=user)
         # make forms

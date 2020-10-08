@@ -5,7 +5,7 @@
     <h2>Watchlist</h2>
         {% if auctions %}
             {% for auction in auctions %}
-                <li><a href="{% url 'show' auction.title %}"> {{ auction.title }} </a></li>
+                <li><a href="{% url 'show' auction.id %}"> {{ auction.title }} </a></li>
             {% endfor %}
         {% else %}
             <h2>Add some auctions to your watchlist to see them</h2>

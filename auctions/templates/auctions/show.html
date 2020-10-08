@@ -2,10 +2,10 @@
 
 {% block body %}
 
-            <li><a href="{% url 'show' auction.title %}"> {{ auction.title }} </a></li>
-            <li>{{auction.price}}</li>
+            <li><a href="{% url 'show' auction.id %}"> {{ auction.title }} </a></li>
+            <li>Current Bid:${{auction.price}}</li>
             <li><img src="{{auction.img_url}}"></img></li>
-            <li>{{auction.category}}</li>
+            <li>Category: {{auction.category}}</li>
             <li>{{auction.description}}</li>
 
         <!-- if signed in  -->
@@ -24,7 +24,7 @@
                 <!-- close auction -->
             {% if user.is_authenticated %}
                 {% if is_current_user_owner %}
-                    <form action="{% url 'close' auction.title %}" method="post" class="EndAuctionForm">
+                    <form action="{% url 'close' auction.id %}" method="post" class="EndAuctionForm">
                         {% csrf_token %}
                         End Auction? {{ end_auction.closed }}
                         <input type="submit" style="visibility: hidden;">

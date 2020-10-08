@@ -4,7 +4,7 @@
     <h2>Active Listings</h2>
 
         {% for auction in auctions %}
-            <li><a href="{% url 'show' auction.title %}"> {{ auction.title }} </a></li>
+            <li><a href="{% url 'show' auction.id %}"> {{ auction.title }} </a></li>
         {% endfor %}
 
 {% endblock %}
