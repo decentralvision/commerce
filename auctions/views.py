@@ -17,10 +17,13 @@ def new(request):
     else:
         form = AuctionForm(request.POST)
         if form.is_valid():
+            # check for duplicates
+
             auction = Auction(**form.cleaned_data)
             auction.user = request.user
             auction.save()
             return HttpResponseRedirect(reverse("index"))
+
         else:
             return render(request, "auctions/new.html", {"form": form})
 
@@ -36,7 +39,6 @@ def close(request, title):
 def bid(request):
     form = BidForm()
     if request.method == "POST":
-        user = request.user
         form = BidForm(request.POST)
         if form.is_valid():
             auction = form.cleaned_data["auction"]
@@ -65,19 +67,17 @@ def watchlist(request):
         if request.method == "GET":
             # check if there are any wauctions
             if Wauction.objects.filter(user=user, active=True).exists():
-                wauctions = Wauction.objects.get(user=user, active=True)
-                if isinstance(wauctions, list):
-
+                wauctions = Wauction.objects.filter(user=user, active=True)
+                # if there are multiple watchlist items
+                # pdb.set_trace()
+                if False:
                     def get_auctions(wauction):
                         return wauction.auction
-
-                    auctions = wauctions.map(get_auctions, wauctions)
+                    auctions = wauctions.auction
+                    return render(request, "auctions/watchlist.html", {"auctions": auctions})
                 else:
-                    auctions = [wauctions.auction]
-
-                return render(
-                    request, "auctions/watchlist.html", {"auctions": auctions}
-                )
+                    auctions = wauctions[0].auction
+                    return render(request, "auctions/watchlist.html", {"auctions": [auctions]})
             else:
                 return render(request, "auctions/watchlist.html", {"auctions": []})
         else:
@@ -95,17 +95,19 @@ def watchlist(request):
 
 
 def show(request, title):
-    if request.method == "GET":
-        user = User.objects.get(username=request.user)
-        auction = Auction.objects.get(title=title)
-        # pdb.set_trace()
-        # pass wuaction status
+    user = request.user
+    auction = Auction.objects.get(title=title)
+    if user.is_authenticated:
+        user = User.objects.get(username=user)
+        # make forms
         if Wauction.objects.filter(user=user, auction=auction).exists():
             wauction = Wauction.objects.get(user=user, auction=auction)
             active = wauction.active
         else:
+            wauction = Wauction(user=user, auction=auction)
             active = False
-        # pass bid form and data
+        wauction_obj = {"auction": auction.id, "active": active}
+
         bid_form = BidForm({"auction": auction, "user": user, "amount": auction.price})
         end_auction = EndAuctionForm({"closed": auction.closed})
         return render(
@@ -113,14 +115,27 @@ def show(request, title):
             "auctions/show.html",
             {
                 "auction": auction,
-                "wauction_form": WauctionForm({"auction": auction.id, "active": active}),
+                "wauction_form": WauctionForm(wauction_obj),
                 "bid_form": bid_form,
-                "end_auction": end_auction
+                "end_auction": end_auction,
+                "is_current_user_winner": user == auction.winner,
+                "is_current_user_owner": user == auction.user
             }
         )
     else:
-        return redirect('index')
-        # return something
+        return render(
+            request,
+            "auctions/show.html",
+            {
+                "auction": auction,
+                "wauction_form": WauctionForm(),
+                "bid_form": BidForm(),
+                "end_auction": EndAuctionForm(),
+                "is_current_user_winner": False,
+                "is_current_user_owner": False
+            }
+        )
+           # return something
 
 
 def index(request):
@@ -128,9 +143,12 @@ def index(request):
 
 
 def category(request, name):
-    auctions = Auction.objects.filter(category=name)
+    auctions = Auction.objects.filter(category__name=name, closed=False)
+    # auctions = query (closed attribute = False objects)
+    # auctions with category.name = name 
+
     # get objects with category matching name
-    return render(request, "auctions/categories.html", {"auctions": auctions})
+    return render(request, "auctions/category.html", {"name": name, "auctions": auctions})
 
 
 def categories(request):

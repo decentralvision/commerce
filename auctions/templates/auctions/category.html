@@ -1,7 +1,7 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-    <h2>{{ category.name }}</h2>
+    <h2>{{ name }}</h2>
 
         {% for auction in auctions %}
             <li><a href="{% url 'show' auction.title %}"> {{ auction.title }} </a></li>

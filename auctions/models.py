@@ -17,7 +17,7 @@ class Auction(models.Model):
     user = models.ForeignKey('User', on_delete=models.PROTECT)
     category = models.ForeignKey('Category', on_delete=models.PROTECT, null=True)
     closed = models.BooleanField('Closed', default=False)
-    winner_id = models.IntegerField('Winner', null=True)
+    winner = models.ForeignKey('User', on_delete=models.PROTECT, null=True, related_name="auction_winner")
 
     def __str__(self):
         return self.title

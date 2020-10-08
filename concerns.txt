@@ -1,0 +1,14 @@
+actually keep track of bids instead of just updating the price of the auction
+
+list item to create listing
+
+display created date
+
+check if the user created the auction before showing close listing form
+
+if the listing is closed display winner of auction or you
+
+only display active listings in watchlist check before passing
+
+only display watchlist and close button on active listings
+

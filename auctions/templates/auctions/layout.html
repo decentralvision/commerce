@@ -26,13 +26,13 @@
             </li>
             {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/auction/new">List Item</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="/watchlist">Watchlist</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/auction/new">Create Listing</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
                 </li>
             {% else %}
                 <li class="nav-item">

@@ -11,7 +11,12 @@
     {% if user.is_authenticated %}
         <form action="/auction/new" method="post">
             {% csrf_token %}
-            {{ form.as_p }}
+            <p>Title: {{ form.title }}</p>
+            <p>Price: {{ form.price }}</p>
+            <p>Image Link: {{ form.img_url }}</p>
+            <p>Category: {{ form.category }}</p>
+            <p>Description: {{ form.description }}</p>
+            
             <input type="submit">
         </form>
     {% else %}

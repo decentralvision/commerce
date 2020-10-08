@@ -4,44 +4,52 @@
 
             <li><a href="{% url 'show' auction.title %}"> {{ auction.title }} </a></li>
             <li>{{auction.price}}</li>
-            <li><img href="{{auction.img_url}}"></img></li>
+            <li><img src="{{auction.img_url}}"></img></li>
             <li>{{auction.category}}</li>
             <li>{{auction.description}}</li>
 
+        <!-- if signed in  -->
         <!-- listing closed -->
             <!-- highest bidder = winner -->
             <!-- display winner or "you" -->   
-            {% if user.is_authenticated %}
-                <form action="{% url 'close' auction.title %}" method="post" class="EndAuctionForm">
-                    {% csrf_token %}
-                    End Auction? {{ end_auction.closed }}
-                    <input type="submit" style="visibility: hidden;">
-                </form>
+        {% if auction.closed %}
+            {% if is_current_user_winner %}<!-- if the user is the winner display "you won!" -->
+                <p>You Won!</p>
+            {% else %}
+                <p>Winner is {{ auction.winner }} </p>
             {% endif %}
-
-                
+        {% else %}
         <!-- listing open -->
             <!-- if signed in and auction.user_id = request.user_id -->
                 <!-- close auction -->
-
-            <!-- if signed in  -->
-            <form action="/watchlist" method="post" class="WatchlistForm">
-                {% csrf_token %}
-                {{ wauction_form.as_p }}
-                <input type="submit" style="visibility: hidden;">
-            </form>
-
-            <form action="/bid" method="post" class="bidForm">
-                {% csrf_token %}
-
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">{{ message }}</div>
-                    {% endfor %}
+            {% if user.is_authenticated %}
+                {% if is_current_user_owner %}
+                    <form action="{% url 'close' auction.title %}" method="post" class="EndAuctionForm">
+                        {% csrf_token %}
+                        End Auction? {{ end_auction.closed }}
+                        <input type="submit" style="visibility: hidden;">
+                    </form>
                 {% endif %}
-                {{ bid_form }}
-                <input type="submit" value="Bid" class="bid">
-            </form>
+
+                <form action="/watchlist" method="post" class="WatchlistForm">
+                    {% csrf_token %}
+                    {{ wauction_form.as_p }}
+                    <input type="submit" style="visibility: hidden;">
+                </form>
+
+                <form action="/bid" method="post" class="bidForm">
+                    {% csrf_token %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {{ bid_form }}
+                    <input type="submit" value="Bid" class="bid">
+                </form>    
+            {% endif %}
+
+        {% endif %}
 
             <!-- comment form -->
 
