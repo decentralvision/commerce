@@ -16,7 +16,11 @@ class Auction(models.Model):
     created_date = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey('User', on_delete=models.PROTECT)
     category = models.ForeignKey('Category', on_delete=models.PROTECT, null=True)
-    active = models.BooleanField('Active', default=True)
+    closed = models.BooleanField('Closed', default=False)
+    winner_id = models.IntegerField('Winner', null=True)
+
+    def __str__(self):
+        return self.title
 
 
 class Category(models.Model):
@@ -27,7 +31,10 @@ class Category(models.Model):
 class Bid(models.Model):
     user = models.ForeignKey('User', on_delete=models.PROTECT)
     auction = models.ForeignKey('Auction', on_delete=models.PROTECT)
-    amount = models.IntegerField('Amount')
+    amount = models.IntegerField('Amount', default=0)
+
+    def __str__(self):
+        return f"{self.user} in {self.auction} bid amount {self.amount}"
 
 class Wauction(models.Model):
     user = models.ForeignKey('User', on_delete=models.PROTECT)
@@ -39,4 +46,3 @@ class Comment(models.Model):
     user = models.ForeignKey('User', on_delete=models.PROTECT, null=True)
     auction = models.ForeignKey('Auction', on_delete=models.PROTECT, null=True)
     content = models.TextField()
-    

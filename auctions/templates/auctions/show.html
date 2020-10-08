@@ -7,10 +7,18 @@
             <li><img href="{{auction.img_url}}"></img></li>
             <li>{{auction.category}}</li>
             <li>{{auction.description}}</li>
-            
+
         <!-- listing closed -->
             <!-- highest bidder = winner -->
             <!-- display winner or "you" -->   
+            {% if user.is_authenticated %}
+                <form action="{% url 'close' auction.title %}" method="post" class="EndAuctionForm">
+                    {% csrf_token %}
+                    End Auction? {{ end_auction.closed }}
+                    <input type="submit" style="visibility: hidden;">
+                </form>
+            {% endif %}
+
                 
         <!-- listing open -->
             <!-- if signed in and auction.user_id = request.user_id -->
@@ -25,6 +33,12 @@
 
             <form action="/bid" method="post" class="bidForm">
                 {% csrf_token %}
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
                 {{ bid_form }}
                 <input type="submit" value="Bid" class="bid">
             </form>
@@ -33,13 +47,18 @@
 
                 <script type="text/javascript">  
                     $(function(){
-                     $(":checkbox").on('change',function(){
+                     $("#id_active").on('change',function(){
                         $('.WatchlistForm').submit();
                         });
                     });
                     $(function(){
                      $(".bid").on('change',function(){
                         $('.bidForm').submit();
+                        });
+                    });
+                    $(function(){
+                     $("#id_closed").on('change',function(){
+                        $('.EndAuctionForm').submit();
                         });
                     });
                 </script>

@@ -9,8 +9,9 @@ urlpatterns = [
     path("register", views.register, name="register"),
     path("auction/<str:title>/", views.show, name="show"),
     path("auction/new", views.new, name="new"),
+    path("auction/close/<str:title>", views.close, name="close"),
     path("category/<str:name>/", views.category, name="category"),
-    path("categories", views.categories, name="category"),
+    path("categories", views.categories, name="categories"),
     path("bid", views.bid, name="bid"),
 
     #dynamic page
