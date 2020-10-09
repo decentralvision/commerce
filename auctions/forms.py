@@ -1,6 +1,13 @@
 from django import forms
 from django.db import models
-from .models import Category, Bid, Auction
+from .models import Category, Bid, Auction, Comment
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ["user", "auction", "content"]
+        widgets = {"user":forms.HiddenInput(), "auction": forms.HiddenInput(), "content": forms.Textarea()}
 
 
 class AuctionForm(forms.Form):

@@ -43,6 +43,8 @@ class Wauction(models.Model):
 
 
 class Comment(models.Model):
-    user = models.ForeignKey('User', on_delete=models.PROTECT, null=True)
-    auction = models.ForeignKey('Auction', on_delete=models.PROTECT, null=True)
-    content = models.TextField()
+    user = models.ForeignKey('User', on_delete=models.PROTECT)
+    auction = models.ForeignKey('Auction', on_delete=models.PROTECT)
+    content = models.TextField('Content', blank=True)
+    def __str__(self):
+        return str(f"comment id: {self.id} on auction: {self.auction.title} by user: {self.user.username}")

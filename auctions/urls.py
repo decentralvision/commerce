@@ -13,6 +13,7 @@ urlpatterns = [
     path("category/<str:name>/", views.category, name="category"),
     path("categories", views.categories, name="categories"),
     path("bid", views.bid, name="bid"),
+    path("comment", views.comment, name="comment"),
 
     #dynamic page
     path("", views.index, name="index"),

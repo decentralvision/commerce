@@ -6,8 +6,8 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from .forms import AuctionForm, WauctionForm, BidForm, EndAuctionForm
-from .models import User, Auction, Bid, Category, Wauction
+from .forms import AuctionForm, WauctionForm, BidForm, EndAuctionForm, CommentForm
+from .models import User, Auction, Bid, Category, Wauction, Comment
 import json
 
 
@@ -25,11 +25,27 @@ def new(request):
         else:
             return render(request, "auctions/new.html", {"form": form})
 
+def comment(request):
+    user = request.user
+    if request.method == "POST":
+        if user.is_authenticated:
+            form = CommentForm(request.POST)
+            if form.is_valid():
+                auction = form.cleaned_data["auction"]
+                # check if it's a duplicate and that it has some content
+                if form.cleaned_data["content"]:
+                    if not Comment.objects.filter(user=user, content=form.cleaned_data["content"], auction=form.cleaned_data["auction"]):
+                        form.save(commit=True)
+                    else:
+                        messages.add_message(request, messages.ERROR, 'This comment is a duplicate.')
+                else:
+                    messages.add_message(request, messages.ERROR, 'Comment must not be empty.')
+    return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
 
 def close(request, id):
     auction = Auction.objects.get(id=id)
     auction.closed = True
-    auction.winner_id = request.user.id
+    auction.winner = get_highest_bidder(auction)
     auction.save()
     return redirect("/auction/{}".format(id))
 
@@ -46,15 +62,7 @@ def bid(request):
                 form.save(commit=True)
             else:
                 messages.add_message(request, messages.ERROR, 'Bid amount must be greater than auction price.')
-        # Bid.objects.create(
-        #     amount=form.cleaned_data["amount"],
-
-        # )
-
-    return redirect("/auction/{}".format(auction.id))
-
-    # bid logic
-    # <!-- for MODEL form verify larger than other bids with auction id matching request auction id-->
+    return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
 
 
 def watchlist(request):
@@ -66,13 +74,14 @@ def watchlist(request):
             # check if there are any wauctions
             if Wauction.objects.filter(user=user, active=True).exists():
                 wauctions = Wauction.objects.filter(user=user, active=True)
-                # if there are multiple watchlist items
-                # pdb.set_trace()
+
+                # get auction items from wauctions where user=user and active=true
                 if False:
+                    # broken
                     def get_auctions(wauction):
                         return wauction.auction
-                    auctions = wauctions.auction
-                    return render(request, "auctions/watchlist.html", {"auctions": auctions})
+                    # auctions = wauctions.auction
+                    # return render(request, "auctions/watchlist.html", {"auctions": auctions})
                 else:
                     auctions = wauctions[0].auction
                     return render(request, "auctions/watchlist.html", {"auctions": [auctions]})
@@ -95,6 +104,7 @@ def watchlist(request):
 def show(request, id):
     user = request.user
     auction = Auction.objects.get(id=id)
+    comments = Comment.objects.filter(auction=auction)
     if user.is_authenticated:
         user = User.objects.get(username=user)
         # make forms
@@ -105,9 +115,12 @@ def show(request, id):
             wauction = Wauction(user=user, auction=auction)
             active = False
         wauction_obj = {"auction": auction.id, "active": active}
-
         bid_form = BidForm({"auction": auction, "user": user, "amount": auction.price})
-        end_auction = EndAuctionForm({"closed": auction.closed})
+        end_auction_form = EndAuctionForm({"closed": auction.closed})
+        comment_form = CommentForm({"auction": auction, "user": user})
+        highest_bidder = get_highest_bidder(auction)
+        number_of_bids = get_number_of_bids(auction)
+        # create comment form and pass
         return render(
             request,
             "auctions/show.html",
@@ -115,7 +128,11 @@ def show(request, id):
                 "auction": auction,
                 "wauction_form": WauctionForm(wauction_obj),
                 "bid_form": bid_form,
-                "end_auction": end_auction,
+                "end_auction": end_auction_form,
+                "comment_form": comment_form,
+                "comments": comments,
+                "number_of_bids": number_of_bids,
+                "highest_bidder": highest_bidder,
                 "is_current_user_winner": user == auction.winner,
                 "is_current_user_owner": user == auction.user
             }
@@ -129,15 +146,18 @@ def show(request, id):
                 "wauction_form": WauctionForm(),
                 "bid_form": BidForm(),
                 "end_auction": EndAuctionForm(),
+                "comments": comments,
+                "number_of_bids": number_of_bids,
+                "highest bidder": highest_bidder,
                 "is_current_user_winner": False,
                 "is_current_user_owner": False
             }
         )
-           # return something
+
 
 
 def index(request):
-    return render(request, "auctions/index.html", {"auctions": Auction.objects.all()})
+    return render(request, "auctions/index.html", {"auctions": Auction.objects.filter(closed=False)})
 
 
 def category(request, name):
@@ -209,3 +229,17 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "auctions/register.html")
+
+
+# extract these into the model
+def get_highest_bidder(auction):
+    if Bid.objects.filter(auction=auction, amount=auction.price):
+        winning_bid = Bid.objects.get(auction=auction, amount=auction.price)
+    else:
+        # probably a better way of doing this
+        return {"username": "No bids yet"}
+    return winning_bid.user
+
+def get_number_of_bids(auction):
+    number_of_bids = Bid.objects.filter(auction=auction).count()
+    return number_of_bids
