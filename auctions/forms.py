@@ -13,7 +13,7 @@ class CommentForm(forms.ModelForm):
 class AuctionForm(forms.Form):
     title = forms.CharField(label="Title")
     price = forms.CharField(widget=forms.NumberInput, label="Price")
-    img_url = forms.CharField(label="Image Url")
+    img_url = forms.CharField(label="Image Url", required=False)
     category = forms.ModelChoiceField(queryset=Category.objects.all(), required=False)
     description = forms.CharField(widget=forms.Textarea, label="Description")
     closed = forms.BooleanField(

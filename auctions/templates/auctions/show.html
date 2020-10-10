@@ -1,13 +1,14 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-            
+<div class="card">
+    <div class="grid-container">
+    <div class="grid-item">
+            <li><img src="{{auction.img_url}}"></img></li>
+            <div class="container">
             <li><a href="{% url 'show' auction.id %}"> {{ auction.title }} </a></li>
             <li>Created {{auction.created_date}}</li>
-            <li>Current Bid ${{auction.price}}</li>
-            <li>Highest Bidder: {{ highest_bidder.username }}</li>
-            <li>Number of bids: {{number_of_bids}}</li>
-            <li><img src="{{auction.img_url}}"></img></li>
+
             <li>Category: {{auction.category}}</li>
             <li>Description: {{auction.description}}</li>
             {% if comments %}
@@ -15,7 +16,12 @@
                     <li>{{comment.user}} said {{comment.content}}</li>
                 {% endfor %}
             {% endif %}
-
+        </div>
+    </div>
+</div>
+Current Bid ${{auction.price}}
+Highest Bidder: {{ highest_bidder.username }}
+Number of bids: {{number_of_bids}}
         <!-- if signed in  -->
         <!-- listing closed -->
             <!-- highest bidder = winner -->

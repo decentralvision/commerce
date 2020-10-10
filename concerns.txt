@@ -1,2 +1,1 @@
-
-only display active listings in watchlist check before passing
+Change active listings page to have more details

@@ -1,6 +1,7 @@
 import pdb
 from django.db.models import Max
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
@@ -11,100 +12,12 @@ from .models import User, Auction, Bid, Category, Wauction, Comment
 import json
 
 
-def new(request):
-    if request.method == "GET":
-        return render(request, "auctions/new.html", {"form": AuctionForm()})
-    else:
-        form = AuctionForm(request.POST)
-        if form.is_valid():
-            auction = Auction(**form.cleaned_data)
-            auction.user = request.user
-            auction.save()
-            return HttpResponseRedirect(reverse("index"))
-
-        else:
-            return render(request, "auctions/new.html", {"form": form})
-
-def comment(request):
-    user = request.user
-    if request.method == "POST":
-        if user.is_authenticated:
-            form = CommentForm(request.POST)
-            if form.is_valid():
-                auction = form.cleaned_data["auction"]
-                # check if it's a duplicate and that it has some content
-                if form.cleaned_data["content"]:
-                    if not Comment.objects.filter(user=user, content=form.cleaned_data["content"], auction=form.cleaned_data["auction"]):
-                        form.save(commit=True)
-                    else:
-                        messages.add_message(request, messages.ERROR, 'This comment is a duplicate.')
-                else:
-                    messages.add_message(request, messages.ERROR, 'Comment must not be empty.')
-    return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
-
-def close(request, id):
-    auction = Auction.objects.get(id=id)
-    auction.closed = True
-    auction.winner = get_highest_bidder(auction)
-    auction.save()
-    return redirect("/auction/{}".format(id))
-
-
-def bid(request):
-    form = BidForm()
-    if request.method == "POST":
-        form = BidForm(request.POST)
-        if form.is_valid():
-            auction = form.cleaned_data["auction"]
-            if auction.price < float(form.cleaned_data["amount"]):
-                auction.price = float(form.cleaned_data["amount"])
-                auction.save()
-                form.save(commit=True)
-            else:
-                messages.add_message(request, messages.ERROR, 'Bid amount must be greater than auction price.')
-    return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
-
-
-def watchlist(request):
-    # if user is logged_in
-    # display user's watchlist
-    user = request.user
-    if user.is_authenticated:
-        if request.method == "GET":
-            # check if there are any wauctions
-            if Wauction.objects.filter(user=user, active=True).exists():
-                wauctions = Wauction.objects.filter(user=user, active=True)
-
-                # get auction items from wauctions where user=user and active=true
-                if False:
-                    # broken
-                    def get_auctions(wauction):
-                        return wauction.auction
-                    # auctions = wauctions.auction
-                    # return render(request, "auctions/watchlist.html", {"auctions": auctions})
-                else:
-                    auctions = wauctions[0].auction
-                    return render(request, "auctions/watchlist.html", {"auctions": [auctions]})
-            else:
-                return render(request, "auctions/watchlist.html", {"auctions": []})
-        else:
-            auction_id = int(request.POST["auction"])
-            auction = Auction.objects.get(pk=auction_id)
-            wauction, created = Wauction.objects.get_or_create(
-                user=user, auction=auction
-            )
-            wauction.active = not bool(wauction.active)
-            wauction.save()
-            return redirect("/auction/{}".format(auction.id))
-
-    else:
-        return redirect("index")
-
-
 def show(request, id):
     user = request.user
     auction = Auction.objects.get(id=id)
     comments = Comment.objects.filter(auction=auction)
+    highest_bidder = get_highest_bidder(auction)
+    number_of_bids = get_number_of_bids(auction)
     if user.is_authenticated:
         user = User.objects.get(username=user)
         # make forms
@@ -118,8 +31,6 @@ def show(request, id):
         bid_form = BidForm({"auction": auction, "user": user, "amount": auction.price})
         end_auction_form = EndAuctionForm({"closed": auction.closed})
         comment_form = CommentForm({"auction": auction, "user": user})
-        highest_bidder = get_highest_bidder(auction)
-        number_of_bids = get_number_of_bids(auction)
         # create comment form and pass
         return render(
             request,
@@ -155,17 +66,12 @@ def show(request, id):
         )
 
 
-
 def index(request):
     return render(request, "auctions/index.html", {"auctions": Auction.objects.filter(closed=False)})
 
 
 def category(request, name):
     auctions = Auction.objects.filter(category__name=name, closed=False)
-    # auctions = query (closed attribute = False objects)
-    # auctions with category.name = name 
-
-    # get objects with category matching name
     return render(request, "auctions/category.html", {"name": name, "auctions": auctions})
 
 
@@ -230,6 +136,99 @@ def register(request):
     else:
         return render(request, "auctions/register.html")
 
+@login_required(login_url='login')
+def new(request):
+    if request.method == "GET":
+        return render(request, "auctions/new.html", {"form": AuctionForm()})
+    else:
+        form = AuctionForm(request.POST)
+        if form.is_valid():
+            auction = Auction(**form.cleaned_data)
+            auction.user = request.user
+            auction.save()
+            return HttpResponseRedirect(reverse("index"))
+
+        else:
+            return render(request, "auctions/new.html", {"form": form})
+
+@login_required(login_url='login')
+def comment(request):
+    user = request.user
+    if request.method == "POST":
+        if user.is_authenticated:
+            form = CommentForm(request.POST)
+            if form.is_valid():
+                auction = form.cleaned_data["auction"]
+                # check if it's a duplicate and that it has some content
+                if form.cleaned_data["content"]:
+                    if not Comment.objects.filter(user=user, content=form.cleaned_data["content"], auction=form.cleaned_data["auction"]):
+                        form.save(commit=True)
+                    else:
+                        messages.add_message(request, messages.ERROR, 'This comment is a duplicate.')
+                else:
+                    messages.add_message(request, messages.ERROR, 'Comment must not be empty.')
+    return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
+
+@login_required(login_url='login')
+def close(request, id):
+    auction = Auction.objects.get(id=id)
+    auction.closed = True
+    if get_highest_bidder(auction)["username"] == "No bids yet":
+        auction.winner = request.user
+    else:
+        auction.winner = get_highest_bidder(auction)
+    auction.save()
+    return redirect("/auction/{}".format(id))
+
+@login_required(login_url='login')
+def bid(request):
+    form = BidForm()
+    if request.method == "POST":
+        form = BidForm(request.POST)
+        if form.is_valid():
+            auction = form.cleaned_data["auction"]
+            if auction.price < float(form.cleaned_data["amount"]):
+                auction.price = float(form.cleaned_data["amount"])
+                auction.save()
+                form.save(commit=True)
+            else:
+                messages.add_message(request, messages.ERROR, 'Bid amount must be greater than auction price.')
+    return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
+
+@login_required(login_url='login')
+def watchlist(request):
+    # if user is logged_in
+    # display user's watchlist
+    user = request.user
+    if user.is_authenticated:
+        if request.method == "GET":
+            # check if there are any wauctions
+            if Wauction.objects.filter(user=user, active=True).exists():
+                wauctions = Wauction.objects.filter(user=user, active=True)
+                # get watched auction items where user=user and active=true
+                if wauctions.count() > 1:
+                    # get auction items from watched auction items
+                    return render(request, "auctions/watchlist.html", {"auctions": wauctions})
+                    # auctions = wauctions.auction
+                    # return render(request, "auctions/watchlist.html", {"auctions": auctions})
+                else:
+                    auction = wauctions[0].auction
+                    return render(request, "auctions/watchlist.html", {"auction": auction})
+            else:
+                return render(request, "auctions/watchlist.html", {"auctions": []})
+        else:
+            auction_id = int(request.POST["auction"])
+            auction = Auction.objects.get(pk=auction_id)
+            wauction, created = Wauction.objects.get_or_create(
+                user=user, auction=auction
+            )
+            wauction.active = not bool(wauction.active)
+            wauction.save()
+            return redirect("/auction/{}".format(auction.id))
+
+    else:
+        return redirect("index")
+
 
 # extract these into the model
 def get_highest_bidder(auction):
@@ -242,4 +241,8 @@ def get_highest_bidder(auction):
 
 def get_number_of_bids(auction):
     number_of_bids = Bid.objects.filter(auction=auction).count()
-    return number_of_bids
+    if number_of_bids:
+        return number_of_bids
+    else:
+        return 0
+    

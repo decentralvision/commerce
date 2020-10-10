@@ -2,9 +2,20 @@
 
 {% block body %}
     <h2>Active Listings</h2>
-
+    <div class="grid-container">
         {% for auction in auctions %}
-            <li><a href="{% url 'show' auction.id %}"> {{ auction.title }} </a></li>
+        <div class="grid-item">
+            <div class="card">
+                <a href="{% url 'show' auction.id %}"><img src="{{auction.img_url}}"  alt="Auction Image" style="width:100%"></img></a>
+                <div class="container">
+                    <p><a href="{% url 'show' auction.id %}">{{ auction.title }} </a></p>
+                    <p>Created {{auction.created_date}}</p>
+                    <p>Current Bid ${{auction.price}}</p>
+                    <p>Category: {{auction.category}}</p>
+                    <p>Description: {{auction.description}}</p>
+                </div>
+            </div>
+        </div>
         {% endfor %}
-
+    </div>
 {% endblock %}
