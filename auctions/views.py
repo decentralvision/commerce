@@ -9,7 +9,6 @@ from .forms import AuctionForm, WauctionForm, BidForm, EndAuctionForm, CommentFo
 from .models import User, Auction, Bid, Category, Wauction, Comment
 
 
-
 def show(request, id):
     """finds auction data and returns forms if user is logged_in"""
     user = request.user
@@ -27,7 +26,10 @@ def show(request, id):
             wauction = Wauction(user=user, auction=auction)
             active = False
         wauction_obj = {"auction": auction.id, "active": active}
-        bid_form = BidForm({"auction": auction, "user": user, "amount": auction.price})
+        bid_form = BidForm({"auction": auction,
+                            "user": user,
+                            "amount": auction.price
+                            })
         end_auction_form = EndAuctionForm({"closed": auction.closed})
         comment_form = CommentForm({"auction": auction, "user": user})
         # return auction forms and data
@@ -74,15 +76,23 @@ def index(request):
 
 def category(request, name):
     """return list of active auctions in category"""
-    auctions = Auction.objects.filter(category__name=name, closed=False)
-    return render(request, "auctions/category.html", {"name": name, "auctions": auctions})
+    auctions = Auction.objects.filter(category__name=name)
+    return render(
+            request,
+            "auctions/category.html",
+            {"name": name, "auctions": auctions}
+        )
 
 
 def categories(request):
     """return list of categories"""
     category_list = Category.objects.all()
     # get list of category names
-    return render(request, "auctions/categories.html", {"category_list": category_list})
+    return render(
+            request,
+            "auctions/categories.html",
+            {"category_list": category_list}
+        )
 
 
 def login_view(request):
@@ -122,7 +132,9 @@ def register(request):
         confirmation = request.POST["confirmation"]
         if password != confirmation:
             return render(
-                request, "auctions/register.html", {"message": "Passwords must match."}
+                request,
+                "auctions/register.html",
+                {"message": "Passwords must match."}
             )
 
         # Attempt to create new user
@@ -140,6 +152,7 @@ def register(request):
     else:
         return render(request, "auctions/register.html")
 
+
 @login_required(login_url='login')
 def new(request):
     """create new auction from auction form or return form error"""
@@ -156,6 +169,7 @@ def new(request):
         else:
             return render(request, "auctions/new.html", {"form": form})
 
+
 @login_required(login_url='login')
 def comment(request):
     """create comment and return to previous page"""
@@ -164,28 +178,42 @@ def comment(request):
         if user.is_authenticated:
             form = CommentForm(request.POST)
             if form.is_valid():
-                auction = form.cleaned_data["auction"]
+                # auction = form.cleaned_data["auction"]
                 # check if it's a duplicate and that it has some content
                 if form.cleaned_data["content"]:
-                    if not Comment.objects.filter(user=user, content=form.cleaned_data["content"], auction=form.cleaned_data["auction"]):
+                    if not is_comment_duplicate(user, form):
                         form.save(commit=True)
                     else:
-                        messages.add_message(request, messages.ERROR, 'This comment is a duplicate.')
+                        messages.add_message(
+                            request,
+                            messages.ERROR,
+                            'This comment is a duplicate.'
+                        )
                 else:
-                    messages.add_message(request, messages.ERROR, 'Comment must not be empty.')
-    return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
+                    messages.add_message(
+                            request,
+                            messages.ERROR,
+                            'Comment must not be empty.'
+                        )
+    return redirect(request.META.get(
+        'HTTP_REFERER',
+        'redirect_if_referer_not_found'
+        ))
+
 
 @login_required(login_url='login')
 def close(request, id):
     """close auction and assign winner variable to the highest_bidder"""
     auction = Auction.objects.get(id=id)
     auction.closed = True
-    if get_highest_bidder(auction)["username"] == "No bids yet":
+    # rewrite method
+    if not get_highest_bidder:
         auction.winner = request.user
     else:
         auction.winner = get_highest_bidder(auction)
     auction.save()
     return redirect("/auction/{}".format(id))
+
 
 @login_required(login_url='login')
 def bid(request):
@@ -200,12 +228,21 @@ def bid(request):
                 auction.save()
                 form.save(commit=True)
             else:
-                messages.add_message(request, messages.ERROR, 'Bid amount must be greater than auction price.')
-    return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    'Bid amount must be greater than auction price.'
+                    )
+    return redirect(request.META.get(
+            'HTTP_REFERER',
+            'redirect_if_referer_not_found'
+            ))
+
 
 @login_required(login_url='login')
 def watchlist(request):
-    """return list of users watchlist items if request is get, else create watched auction object and refresh page"""
+    """if request is get return list of users watchlist items,
+    else create watched auction object and refresh page"""
     # if user is logged_in
     # display user's watchlist
     user = request.user
@@ -217,14 +254,23 @@ def watchlist(request):
                 # get watched auction items where user=user and active=true
                 if wauctions.count() > 1:
                     # get auction items from watched auction items
-                    return render(request, "auctions/watchlist.html", {"auctions": wauctions})
-                    # auctions = wauctions.auction
-                    # return render(request, "auctions/watchlist.html", {"auctions": auctions})
-                else:
-                    auction = wauctions[0].auction
-                    return render(request, "auctions/watchlist.html", {"auction": auction})
+                    return render(
+                        request,
+                        "auctions/watchlist.html",
+                        {"auctions": wauctions}
+                        )
+                auction = wauctions[0].auction
+                return render(
+                    request,
+                    "auctions/watchlist.html",
+                    {"auction": auction}
+                    )
             else:
-                return render(request, "auctions/watchlist.html", {"auctions": []})
+                return render(
+                    request,
+                    "auctions/watchlist.html",
+                    {"auctions": []}
+                    )
         else:
             auction_id = int(request.POST["auction"])
             auction = Auction.objects.get(pk=auction_id)
@@ -244,10 +290,10 @@ def get_highest_bidder(auction):
     """return auction's highest bidder based on the auction's price"""
     if Bid.objects.filter(auction=auction, amount=auction.price):
         winning_bid = Bid.objects.get(auction=auction, amount=auction.price)
-    else:
-        # probably a better way of doing this
-        return {"username": "No bids yet"}
-    return winning_bid.user
+        return winning_bid.user
+    return False
+    
+
 
 def get_number_of_bids(auction):
     """return number of bids"""
@@ -256,4 +302,12 @@ def get_number_of_bids(auction):
         return number_of_bids
     else:
         return 0
-    
+
+
+def is_comment_duplicate(user, form):
+    """checks for duplicate comment"""
+    return Comment.objects.filter(
+            user=user,
+            content=form.cleaned_data["content"],
+            auction=form.cleaned_data["auction"]
+        )
