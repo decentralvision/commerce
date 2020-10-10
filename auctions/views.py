@@ -1,5 +1,3 @@
-import pdb
-from django.db.models import Max
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
@@ -9,10 +7,11 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from .forms import AuctionForm, WauctionForm, BidForm, EndAuctionForm, CommentForm
 from .models import User, Auction, Bid, Category, Wauction, Comment
-import json
+
 
 
 def show(request, id):
+    """finds auction data and returns forms if user is logged_in"""
     user = request.user
     auction = Auction.objects.get(id=id)
     comments = Comment.objects.filter(auction=auction)
@@ -31,7 +30,7 @@ def show(request, id):
         bid_form = BidForm({"auction": auction, "user": user, "amount": auction.price})
         end_auction_form = EndAuctionForm({"closed": auction.closed})
         comment_form = CommentForm({"auction": auction, "user": user})
-        # create comment form and pass
+        # return auction forms and data
         return render(
             request,
             "auctions/show.html",
@@ -48,34 +47,39 @@ def show(request, id):
                 "is_current_user_owner": user == auction.user
             }
         )
-    else:
-        return render(
-            request,
-            "auctions/show.html",
-            {
-                "auction": auction,
-                "wauction_form": WauctionForm(),
-                "bid_form": BidForm(),
-                "end_auction": EndAuctionForm(),
-                "comments": comments,
-                "number_of_bids": number_of_bids,
-                "highest bidder": highest_bidder,
-                "is_current_user_winner": False,
-                "is_current_user_owner": False
-            }
-        )
+    # return auction data
+    return render(
+        request,
+        "auctions/show.html",
+        {
+            "auction": auction,
+            "wauction_form": WauctionForm(),
+            "bid_form": BidForm(),
+            "end_auction": EndAuctionForm(),
+            "comments": comments,
+            "number_of_bids": number_of_bids,
+            "highest bidder": highest_bidder,
+            "is_current_user_winner": False,
+            "is_current_user_owner": False
+        }
+    )
 
 
 def index(request):
-    return render(request, "auctions/index.html", {"auctions": Auction.objects.filter(closed=False)})
+    """return active auctions"""
+    return render(request, "auctions/index.html", {
+        "auctions": Auction.objects.filter(closed=False)
+        })
 
 
 def category(request, name):
+    """return list of active auctions in category"""
     auctions = Auction.objects.filter(category__name=name, closed=False)
     return render(request, "auctions/category.html", {"name": name, "auctions": auctions})
 
 
 def categories(request):
+    """return list of categories"""
     category_list = Category.objects.all()
     # get list of category names
     return render(request, "auctions/categories.html", {"category_list": category_list})
@@ -138,6 +142,7 @@ def register(request):
 
 @login_required(login_url='login')
 def new(request):
+    """create new auction from auction form or return form error"""
     if request.method == "GET":
         return render(request, "auctions/new.html", {"form": AuctionForm()})
     else:
@@ -153,6 +158,7 @@ def new(request):
 
 @login_required(login_url='login')
 def comment(request):
+    """create comment and return to previous page"""
     user = request.user
     if request.method == "POST":
         if user.is_authenticated:
@@ -171,6 +177,7 @@ def comment(request):
 
 @login_required(login_url='login')
 def close(request, id):
+    """close auction and assign winner variable to the highest_bidder"""
     auction = Auction.objects.get(id=id)
     auction.closed = True
     if get_highest_bidder(auction)["username"] == "No bids yet":
@@ -182,6 +189,7 @@ def close(request, id):
 
 @login_required(login_url='login')
 def bid(request):
+    """create bid object or pass error message and refresh page"""
     form = BidForm()
     if request.method == "POST":
         form = BidForm(request.POST)
@@ -197,6 +205,7 @@ def bid(request):
 
 @login_required(login_url='login')
 def watchlist(request):
+    """return list of users watchlist items if request is get, else create watched auction object and refresh page"""
     # if user is logged_in
     # display user's watchlist
     user = request.user
@@ -232,6 +241,7 @@ def watchlist(request):
 
 # extract these into the model
 def get_highest_bidder(auction):
+    """return auction's highest bidder based on the auction's price"""
     if Bid.objects.filter(auction=auction, amount=auction.price):
         winning_bid = Bid.objects.get(auction=auction, amount=auction.price)
     else:
@@ -240,6 +250,7 @@ def get_highest_bidder(auction):
     return winning_bid.user
 
 def get_number_of_bids(auction):
+    """return number of bids"""
     number_of_bids = Bid.objects.filter(auction=auction).count()
     if number_of_bids:
         return number_of_bids
